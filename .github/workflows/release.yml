@@ -1,0 +1,87 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Compile for Windows
+        run: deno compile --allow-read --allow-write --target x86_64-pc-windows-msvc --output "backupper.exe" main.ts
+
+      - name: Compile for Linux
+        run: deno compile --allow-read --allow-write --target x86_64-unknown-linux-gnu --output "backupper_linux" main.ts
+
+      - name: Compile for Apple x86
+        run: deno compile --allow-read --allow-write --target x86_64-apple-darwin --output "backupper_apple_x86" main.ts
+
+      - name: Compile for Apple ARM
+        run: deno compile --allow-read --allow-write --target aarch64-apple-darwin --output "backupper_apple_arm" main.ts
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: ${{ github.ref_name }}
+          draft: true
+          prerelease: false
+
+      - name: Upload Windows app
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: backupper.exe
+          asset_name: backupper.exe
+          asset_content_type: application/vnd.microsoft.portable-executable
+          
+      - name: Upload Linux app
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: backupper_linux
+          asset_name: backupper_linux
+          asset_content_type: application/x-sharedlib
+          
+      - name: Upload Apple x86 app
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: backupper_apple_x86
+          asset_name: backupper_apple_x86
+          asset_content_type: application/x-mach-binary
+          
+      - name: Upload Apple ARM app
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: backupper_apple_arm
+          asset_name: backupper_apple_arm
+          asset_content_type: application/x-mach-binary
+
+          
