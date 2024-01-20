@@ -1,2 +1,2 @@
-backupper-config.toml
-*.exe
+# compiled executables and config
+backupper*
